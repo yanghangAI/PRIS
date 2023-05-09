@@ -44,8 +44,8 @@ checkpoint_on_error = True
 SAVE_freq = 50
 
 IMAGE_PATH = 'image/'
-IMAGE_PATH_cover = IMAGE_PATH + 'cover/'
+IMAGE_PATH_host= IMAGE_PATH + 'host/'
 IMAGE_PATH_secret = IMAGE_PATH + 'secret/'
-IMAGE_PATH_steg = IMAGE_PATH + 'steg/'
-IMAGE_PATH_secret_rev = IMAGE_PATH + 'secret-rev/'
+IMAGE_PATH_container = IMAGE_PATH + 'container/'
+IMAGE_PATH_extracted = IMAGE_PATH + 'extracted/'
 
