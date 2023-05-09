@@ -1,0 +1,10 @@
+numpy==1.22.3
+opencv-python==4.4.0.46
+tensorboard==2.11.2
+tensorboard-data-server==0.6.1
+tensorboard-plugin-wit==1.8.1
+tensorboardX==2.5.1
+torch==1.11.0
+torchaudio==0.11.0
+torchfile==0.1.0
+torchsummary==1.5.1
