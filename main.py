@@ -29,18 +29,18 @@ def embed_attack(net, input_img, attack_method):
     #    forward:   #
     #################
     output = net(input_img)
-    output_steg = output.narrow(1, 0, 4 * c.channels_in)
+    output_container = output.narrow(1, 0, 4 * c.channels_in)
     output_z = output.narrow(1, 4 * c.channels_in, output.shape[1] - 4 * c.channels_in)
     output_z = gauss_noise(output_z.shape)
-    steg_img = iwt(output_steg)
+    container_img = iwt(output_container)
 
     #################
     #   attack:   #
     #################
-    attack_steg = attack(steg_img, attack_method)
-    input_steg = dwt(attack_steg)
+    attack_container = attack(container_img, attack_method)
+    input_container = dwt(attack_container)
 
-    return steg_img, attack_steg, output_z, output_steg, input_steg
+    return container_img, attack_container, output_z, output_container, input_container
 
 def train_epoch(net, step, optim=None, attack_method=None, i_epoch=None, writer=None, mode='train', lam=(1.0, 1.0), device='cuda'):
     r_loss_list, g_loss_list, pre_loss_list, post_loss_list, psnr_c, psnr_s, total_loss_list = [], [], [], [], [], [], []
@@ -55,45 +55,45 @@ def train_epoch(net, step, optim=None, attack_method=None, i_epoch=None, writer=
     for i_batch, data in enumerate(dataloader):
         data = data.to(device)
         num = data.shape[0] // 2
-        cover = data[:num]
+        host = data[:num]
         secret = data[num:num * 2]
-        cover_input = dwt(cover)
+        host_input = dwt(host)
         secret_input = dwt(secret)
 
-        input_img = torch.cat((cover_input, secret_input), 1)
-        steg_img, attack_steg, output_z, output_steg, input_steg = embed_attack(net, input_img, attack_method)
+        input_img = torch.cat((host_input, secret_input), 1)
+        steg_img, attack_container, output_z, output_container, input_container = embed_attack(net, input_img, attack_method)
 
         if step == 1 or step == 2:
-            input_steg = net.pre_enhance(attack_steg)
-            input_steg = dwt(input_steg)
+            input_container = net.pre_enhance(attack_container)
+            input_container = dwt(input_container)
 
         #################
         #   backward:   #
         #################
-        output_rev = torch.cat((input_steg, output_z), 1)
+        output_rev = torch.cat((input_container, output_z), 1)
         output_image = net(output_rev, rev=True)
-        secret_rev = output_image.narrow(1, 4 * c.channels_in,
+        extracted = output_image.narrow(1, 4 * c.channels_in,
                                          output_image.shape[1] - 4 * c.channels_in)
-        secret_rev = iwt(secret_rev)
+        extracted = iwt(extracted)
         if step == 1 or step == 2:
-            secret_rev = net.post_enhance(secret_rev)
+            extracted = net.post_enhance(extracted)
 
 
         #################
         #     loss:     #
         #################
 
-        c_loss = mse_loss(steg_img, cover)
-        s_loss = mse_loss(secret_rev, secret)
+        c_loss = mse_loss(steg_img, host)
+        s_loss = mse_loss(extracted, secret)
 
-        secret_rev = secret_rev.clip(0, 1)
+        extracted = extracted.clip(0, 1)
         secret = secret.clip(0, 1)
-        cover = cover.clip(0, 1)
-        steg = steg_img.clip(0, 1)
+        host = host.clip(0, 1)
+        container = steg_img.clip(0, 1)
 
-        psnr_temp = computePSNR(secret_rev, secret)
+        psnr_temp = computePSNR(extracted, secret)
         psnr_s.append(psnr_temp)
-        psnr_temp_c = computePSNR(cover, steg)
+        psnr_temp_c = computePSNR(host, container)
         psnr_c.append(psnr_temp_c)
 
         if step == 1:
@@ -108,10 +108,10 @@ def train_epoch(net, step, optim=None, attack_method=None, i_epoch=None, writer=
             optim.zero_grad()
 
         elif mode == 'test':
-            torchvision.utils.save_image(cover, c.IMAGE_PATH_cover + '%.5d.png' % i_batch)
-            torchvision.utils.save_image(steg, c.IMAGE_PATH_steg + '%.5d.png' % i_batch)
+            torchvision.utils.save_image(host, c.IMAGE_PATH_host + '%.5d.png' % i_batch)
+            torchvision.utils.save_image(container, c.IMAGE_PATH_container + '%.5d.png' % i_batch)
             torchvision.utils.save_image(secret, c.IMAGE_PATH_secret + '%.5d.png' % i_batch)
-            torchvision.utils.save_image(secret_rev, c.IMAGE_PATH_secret_rev + '%.5d.png' % i_batch)
+            torchvision.utils.save_image(extracted, c.IMAGE_PATH_extracted + '%.5d.png' % i_batch)
 
         g_loss_list.append(c_loss.item())
         r_loss_list.append(s_loss.item())
