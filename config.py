@@ -24,8 +24,8 @@ val_freq = 10
 
 
 # Dataset
-TRAIN_PATH = '/home/yanghang/Dataset/DIV2K/DIV2K_train_HR'
-VAL_PATH = '/home/yanghang/Dataset/DIV2K/DIV2K_valid_HR'
+TRAIN_PATH = '/home/Dataset/DIV2K/DIV2K_train_HR'
+VAL_PATH = '/home/Dataset/DIV2K/DIV2K_valid_HR'
 format_train = 'png'
 format_val = 'png'
 
