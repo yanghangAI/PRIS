@@ -2,6 +2,7 @@ import torch.optim
 import torch.nn as nn
 import modules.rrdb_denselayer
 from modules.hinet import Hinet
+import config as c
 
 
 class PRIS(nn.Module):
@@ -14,15 +15,15 @@ class PRIS(nn.Module):
     def load_hinet(self, path):
         state_dicts = torch.load(path)
         network_state_dict = {k: v for k, v in state_dicts['net'].items() if 'tmp_var' not in k}
-        self.hinet.load_state_dict(network_state_dict)
+        self.inbs.load_state_dict(network_state_dict)
 
     def forward(self, x, rev=False):
 
         if not rev:
-            out = self.hinet(x)
+            out = self.inbs(x)
 
         else:
-            out = self.hinet(x, rev=True)
+            out = self.inbs(x, rev=True)
 
         return out
 
